@@ -147,22 +147,41 @@ if live_mode:
     if _HAS_WEBRTC:
         class VP(VideoProcessorBase):
             def __init__(self):
-                self.count = 0; self.latest = None; self.expr = 'Unknown'
+                self.count = 0
+                self.latest = None
+                self.expr = 'Unknown'
             def recv(self, frame):
-                img = frame.to_ndarray(format="bgr24")
+                try:
+                    img = frame.to_ndarray(format="bgr24")
+                except Exception:
+                    return frame
                 self.count += 1
+                # Sample every 5th frame for light processing
                 if self.count % 5 == 0:
                     e = detect_expression(img)
                     self.expr = e
                     self.latest = overlay_expression(img, e)
                 return frame
-        ctx = webrtc_streamer(key="live", video_processor_factory=VP, media_stream_constraints={"video": True, "audio": False})
-        if ctx and ctx.video_processor and ctx.video_processor.latest is not None:
+        try:
+            ctx = webrtc_streamer(
+                key="live",
+                video_processor_factory=VP,
+                media_stream_constraints={"video": True, "audio": False},
+                async_processing=True
+            )
+        except Exception as e:
+            st.warning(f"WebRTC initialization failed: {e}. Falling back to manual capture.")
+            ctx = None
+            _HAS_WEBRTC = False
+        if ctx and getattr(ctx, 'video_processor', None) and ctx.video_processor.latest is not None:
             live_frame = ctx.video_processor.latest
             live_expr = ctx.video_processor.expr
-            st.image(cv2.cvtColor(live_frame, cv2.COLOR_BGR2RGB), caption=f"Expression: {live_expr}")
+            if _HAS_CV2 and live_frame is not None:
+                st.image(cv2.cvtColor(live_frame, cv2.COLOR_BGR2RGB), caption=f"Expression: {live_expr}")
+            else:
+                st.image(live_frame, caption=f"Expression: {live_expr}")
         else:
-            st.info("Waiting for frames...")
+            st.info("Waiting for frames... (Allow camera permission or use manual snapshot below)")
     else:
         snap = st.camera_input("Capture frame")
         if snap:
