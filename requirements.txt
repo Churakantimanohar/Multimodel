@@ -13,7 +13,8 @@ pandas>=2.0.0
 scikit-learn>=1.3.0
 librosa>=0.10.1
 soundfile>=0.12.1
-opencv-python>=4.9.0
+# Use headless build for server/Streamlit Cloud (no GUI libs needed)
+opencv-python-headless>=4.9.0
 # mediapipe unavailable for Python 3.13 wheels; using fallback in code.
 protobuf>=3.20.0,<4.0.0
 streamlit>=1.32.0

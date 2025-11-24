@@ -1,5 +1,10 @@
 import streamlit as st
-import torch, cv2, os, sys, time, json, numpy as np, pandas as pd, altair as alt
+import torch, os, sys, time, json, numpy as np, pandas as pd, altair as alt
+try:
+    import cv2
+    _HAS_CV2 = True
+except Exception:
+    _HAS_CV2 = False
 from PIL import Image
 from tempfile import NamedTemporaryFile
 
